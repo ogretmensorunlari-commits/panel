@@ -96,8 +96,10 @@ audio,video{width:100%;margin:8px 0;border-radius:12px}
 </div>
 
 <div class="view" id="v-haber">
- <h2>Son dakika</h2>
- <div class="card"><ul id="news"><li class="mut">Yükleniyor…</li></ul></div>
+ <h2>Haberler</h2>
+ <div style="text-align:center"><button class="btn" id="tSd" onclick="newsTab('sondakika')">Son dakika</button><button class="btn g" id="tEg" onclick="newsTab('egitim')">Eğitim</button></div>
+ <div class="card" style="margin-top:10px"><ul id="news"><li class="mut">Yükleniyor…</li></ul></div>
+ <div class="mut" id="newsInfo" style="font-size:12px;text-align:center;margin-bottom:8px"></div>
  <button class="btn g" onclick="getNews()">Yenile</button>
 </div>
 
@@ -242,15 +244,21 @@ async function getWeather(){
  }catch(e){$('wInfo').className='err';$('wInfo').textContent=e.message}
 }
 
-/* Haber */
+/* Haber: depodaki news.json (Sözcü + AA, GitHub Actions ile 15 dk'da bir güncellenir) */
+let NEWS=null,NT='sondakika';
+function newsTab(t){NT=t;$('tSd').className='btn'+(t==='sondakika'?'':' g');$('tEg').className='btn'+(t==='egitim'?'':' g');showNews()}
+function showNews(){
+ if(!NEWS)return;
+ const a=NEWS[NT]||[];
+ $('news').innerHTML=a.map(i=>'<li><a href="'+esc(i.l)+'" target="_blank" rel="noopener">'+esc(i.t)+'</a><div class="mut" style="font-size:12px">'+esc(i.s)+' · '+esc(i.d)+'</div></li>').join('')||'<li class="mut">Haber yok</li>';
+ $('newsInfo').textContent='Son güncelleme: '+NEWS.updated;
+}
 async function getNews(){
- const ul=$('news');
  try{
-  const feed=encodeURIComponent('https://news.google.com/rss?hl=tr&gl=TR&ceid=TR:tr');
-  const j=await (await fetch('https://api.rss2json.com/v1/api.json?rss_url='+feed)).json();
-  if(j.status!=='ok')throw new Error('Haber servisi yanıt vermedi');
-  ul.innerHTML=j.items.slice(0,10).map(i=>'<li><a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a></li>').join('');
- }catch(e){ul.innerHTML='<li class="err">Haberler alınamadı: '+esc(e.message)+'</li>'}
+  const r=await fetch('news.json?t='+Date.now(),{cache:'no-store'});
+  if(!r.ok)throw new Error('news.json bulunamadı (HTTP '+r.status+')');
+  NEWS=await r.json();showNews();
+ }catch(e){$('news').innerHTML='<li class="err">Haberler alınamadı: '+esc(e.message)+'</li>'}
 }
 
 /* Konum kaydı */
