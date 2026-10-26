@@ -1,0 +1,101 @@
+name: Haberleri güncelle
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  haber:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Haberleri çek
+        run: |
+          python3 - <<'PY'
+          import json, re, os, urllib.request, xml.etree.ElementTree as ET
+          from email.utils import parsedate_to_datetime
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+
+          TR = ZoneInfo('Europe/Istanbul')
+          UA = {'User-Agent': 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36',
+                'Accept': 'application/rss+xml, application/xml, text/xml, */*'}
+          FEEDS = [
+              ('Sözcü', 'https://www.sozcu.com.tr/feeds-son-dakika', 'sondakika'),
+              ('AA', 'https://www.aa.com.tr/tr/rss/default?cat=guncel', 'sondakika'),
+              ('Sözcü', 'https://www.sozcu.com.tr/feeds-rss-category-egitim', 'egitim'),
+          ]
+          KEY = re.compile(r'eğitim|okul|öğretmen|öğrenci|üniversite|karne|sınav|yükseköğretim|maarif|\b(?:meb|yks|lgs|yök|kpss)\b')
+
+          def tr_lower(s):
+              return s.replace('İ', 'i').replace('I', 'ı').lower()
+
+          def get(url):
+              req = urllib.request.Request(url, headers=UA)
+              return urllib.request.urlopen(req, timeout=30).read()
+
+          def parse(b):
+              root = ET.fromstring(b)
+              out = []
+              for it in root.iter('item'):
+                  t = (it.findtext('title') or '').strip()
+                  l = (it.findtext('link') or '').strip()
+                  p = it.findtext('pubDate')
+                  try:
+                      d = parsedate_to_datetime(p)
+                      if d.tzinfo is None:
+                          d = d.replace(tzinfo=timezone.utc)
+                  except Exception:
+                      d = None
+                  if t and l:
+                      out.append((t, l, d))
+              return out
+
+          def fmt(d):
+              return d.astimezone(TR).strftime('%d.%m %H:%M') if d else ''
+
+          res = {'sondakika': {}, 'egitim': {}}
+          ok = 0
+          for src, url, cat in FEEDS:
+              try:
+                  items = parse(get(url))
+                  ok += 1
+                  print('OK', src, cat, len(items))
+              except Exception as e:
+                  print('HATA', src, url, e)
+                  continue
+              for t, l, d in items:
+                  res[cat][l] = (t, l, src, d)
+                  if src == 'AA' and cat == 'sondakika' and KEY.search(tr_lower(t)):
+                      res['egitim'][l] = (t, l, src, d)
+
+          if ok == 0:
+              raise SystemExit('Hicbir kaynak alinamadi, news.json degistirilmedi')
+
+          epoch = datetime.min.replace(tzinfo=timezone.utc)
+          out = {}
+          for k, v in res.items():
+              arr = sorted(v.values(), key=lambda x: x[3] or epoch, reverse=True)[:10]
+              out[k] = [{'t': t, 'l': l, 's': s, 'd': fmt(d)} for t, l, s, d in arr]
+
+          old = {}
+          if os.path.exists('news.json'):
+              try:
+                  old = json.load(open('news.json', encoding='utf-8'))
+              except Exception:
+                  old = {}
+          if all(old.get(k) == out[k] for k in out):
+              print('Degisiklik yok')
+          else:
+              out['updated'] = datetime.now(TR).strftime('%d.%m.%Y %H:%M')
+              json.dump(out, open('news.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+              print('news.json yazildi')
+
+          PY
+      - name: Kaydet
+        run: |
+          git config user.name "haber-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add news.json
+          git diff --cached --quiet || (git commit -m "haberler" && git push)
