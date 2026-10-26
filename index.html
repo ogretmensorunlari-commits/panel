@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#05070f">
+<title>Cep Panosu</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#04060d;--glass:rgba(22,28,64,.7);--ink:#f3f6ff;--mut:#9aa6c8;--line:rgba(150,160,255,.2);--warm:#ffb454;--a:#7b5cff;--b:#2ec5ff;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg) radial-gradient(120% 50% at 80% 110%,#2268b5 0,#0d2d5c 30%,transparent 62%),radial-gradient(90% 40% at 10% -5%,#2a1c6b 0,transparent 60%);color:var(--ink);font:16px/1.4 system-ui,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+main{flex:1;overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 22px) 16px 14px}
+.view{display:none}.view.on{display:block}
+#v-ana{text-align:center}
+#clock{font-size:92px;font-weight:200;letter-spacing:-3px;line-height:1;margin:26px 0 6px;font-variant-numeric:tabular-nums;text-shadow:0 0 40px rgba(46,197,255,.35)}
+#sec{display:block;font-size:20px;letter-spacing:6px;color:var(--b);font-weight:300;margin-top:4px;text-indent:6px}
+#date{color:var(--mut);margin:10px 0 26px;font-size:18px;letter-spacing:.4px}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:20px 16px;margin-bottom:14px;backdrop-filter:blur(10px)}
+#wLoc{font-size:17px;font-weight:600;letter-spacing:.3px}
+.wmain{display:flex;justify-content:center;align-items:center;gap:14px;margin:10px 0 2px}
+#wIco{font-size:54px}#wT{font-size:72px;font-weight:300;line-height:1}
+#wDesc{font-size:17px}#wFeel{color:var(--mut);font-size:14px}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:18px 0 4px;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.chip{font-size:12px;color:var(--mut)}.chip b{display:block;color:var(--ink);font-size:16px;font-weight:600;margin-bottom:2px}
+.days{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.day{font-size:12px;color:var(--mut)}.day b{display:block;color:var(--ink);font-size:15px;font-weight:500;margin-top:2px}
+.src{font-size:12px;color:var(--mut);margin-top:12px}
+.src button{background:none;border:0;color:var(--b);font:inherit;padding:0 0 0 6px;text-decoration:underline}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0 8px}
+.act{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;color:var(--ink);font:inherit;font-size:13px;padding:0}
+.ring{width:68px;height:68px;border-radius:50%;border:2.5px solid transparent;background:linear-gradient(#0c1124,#0c1124) padding-box,linear-gradient(135deg,var(--a),var(--b)) border-box;display:grid;place-items:center}
+.ring svg{width:28px;height:28px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ring.warm{background:linear-gradient(#0c1124,#0c1124) padding-box,linear-gradient(135deg,#ff7a45,var(--warm)) border-box}
+h2{font-size:22px;font-weight:600;margin:6px 4px 14px;text-align:center}
+ul{list-style:none;margin:0;padding:0}
+li{padding:12px 0;border-top:1px solid var(--line)}li:first-child{border-top:0}
+a{color:var(--ink);text-decoration:none}
+.mut{color:var(--mut)}.err{color:var(--warm)}
+input{font:inherit;color:var(--ink);background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;margin-bottom:8px}
+.btn{font:inherit;border:0;border-radius:24px;padding:12px 20px;color:#fff;background:linear-gradient(135deg,var(--a),var(--b));margin:2px 6px 2px 0}
+.btn.w{background:linear-gradient(135deg,#ff7a45,var(--warm));color:#1a1000}
+.btn.g{background:none;border:1px solid var(--line);color:var(--mut)}
+audio,video{width:100%;margin:8px 0;border-radius:12px}
+.dock{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 4px calc(env(safe-area-inset-bottom,0px) + 10px);background:rgba(4,6,13,.78);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.dock .ring{width:46px;height:46px}.dock .ring svg{width:22px;height:22px}
+.dock .act{font-size:11px;gap:4px;color:var(--mut)}.dock .on{color:var(--ink)}
+.dock .on .ring{box-shadow:0 0 14px rgba(123,92,255,.75)}
+#ring,#bye{display:none;position:fixed;inset:0;z-index:9;text-align:center;padding-top:30vh;font-size:26px}
+#ring{background:linear-gradient(160deg,#ff7a45,#b4231f)}
+#bye{background:var(--bg);color:var(--mut)}
+#ring button,#bye button{margin-top:30px;font:inherit;font-size:20px;border:0;border-radius:30px;padding:16px 32px;background:#fff;color:#000}
+@media (prefers-reduced-motion:no-preference){.view.on{animation:f .2s ease-out}@keyframes f{from{opacity:.3}to{opacity:1}}}
+</style>
+</head>
+<body>
+<div id="ring"><div id="ringTxt"></div><button onclick="stopRing()">Alarmı kapat</button></div>
+<div id="bye"><div>Panel kapatıldı</div><button onclick="location.reload()">Yeniden aç</button></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-news" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+<symbol id="i-rec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="11" rx="2"/><path d="M16 11l5-3v8l-5-3"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</defs></svg>
+
+<main>
+<div class="view on" id="v-ana">
+ <div id="clock">--:--</div><span id="sec"></span>
+ <p id="date"></p>
+ <div class="card">
+  <div id="wLoc">Konum bekleniyor…</div>
+  <div class="wmain"><span id="wIco"></span><span id="wT">–</span></div>
+  <div id="wDesc">&nbsp;</div><div id="wFeel"></div>
+  <div class="chips">
+   <div class="chip"><b id="wH">–</b>Nem</div>
+   <div class="chip"><b id="wP">–</b>Yağış</div>
+   <div class="chip"><b id="wB">–</b>Basınç</div>
+   <div class="chip"><b id="wW">–</b>Rüzgâr</div>
+  </div>
+  <div class="days" id="days"></div>
+  <div class="src"><span id="wInfo"></span><button onclick="togCity()">Şehir seç</button></div>
+  <div id="cityBox" style="display:none;margin-top:12px;text-align:left"><input id="cityIn" placeholder="İlçe veya şehir (örn. Muğla)"><button class="btn" onclick="setCity()">Göster</button></div>
+ </div>
+ <div class="acts">
+  <button class="act" onclick="saveLoc(this)"><span class="ring warm"><svg><use href="#i-pin"/></svg></span>Konumu kaydet</button>
+  <button class="act" onclick="go('kayit');rec('audio')"><span class="ring"><svg><use href="#i-mic"/></svg></span>Ses kaydı</button>
+  <button class="act" onclick="go('kayit');rec('video')"><span class="ring"><svg><use href="#i-cam"/></svg></span>Görüntü kaydı</button>
+ </div>
+</div>
+
+<div class="view" id="v-haber">
+ <h2>Son dakika</h2>
+ <div class="card"><ul id="news"><li class="mut">Yükleniyor…</li></ul></div>
+ <button class="btn g" onclick="getNews()">Yenile</button>
+</div>
+
+<div class="view" id="v-ajanda">
+ <h2>Randevular</h2>
+ <div class="card">
+  <input id="aT" placeholder="Randevu adı">
+  <input id="aD" type="datetime-local">
+  <button class="btn" onclick="addAppt()">Ekle</button>
+  <ul id="appts"></ul>
+ </div>
+ <h2>Alarmlar</h2>
+ <div class="card">
+  <input id="alT" type="time">
+  <input id="alL" placeholder="Etiket">
+  <button class="btn" onclick="addAlarm()">Kur</button>
+  <ul id="alarms"></ul>
+  <div class="mut" style="font-size:12px;margin-top:8px">Bu alarm yalnızca panel açıkken çalar. Güvenilir alarm için Samsung Saat’i kullanın.</div>
+ </div>
+</div>
+
+<div class="view" id="v-konum">
+ <h2>Konum kayıtları</h2>
+ <div style="text-align:center"><button class="btn w" onclick="saveLoc(this)">Buradayım: tüm verilerle kaydet</button></div>
+ <div class="card" style="margin-top:12px"><ul id="locs"></ul></div>
+ <button class="btn g" onclick="exportLocs()">Dosya olarak indir</button>
+</div>
+
+<div class="view" id="v-kayit">
+ <h2>Kayıt</h2>
+ <div style="text-align:center"><button class="btn" onclick="rec('audio')">Ses</button><button class="btn" onclick="rec('video')">Görüntü</button><button class="btn w" id="stopBtn" onclick="stopRec()" disabled>Durdur</button></div>
+ <div id="recSt" class="mut" style="margin:8px 4px;text-align:center"></div>
+ <video id="prev" muted playsinline style="display:none"></video>
+ <div class="card"><ul id="recs"><li class="mut" id="recEmpty">Henüz kayıt yok</li></ul></div>
+</div>
+</main>
+
+<nav class="dock">
+ <button class="act on" data-v="ana" onclick="go('ana')"><span class="ring"><svg><use href="#i-home"/></svg></span>Ana</button>
+ <button class="act" data-v="haber" onclick="go('haber')"><span class="ring"><svg><use href="#i-news"/></svg></span>Haber</button>
+ <button class="act" data-v="ajanda" onclick="go('ajanda')"><span class="ring"><svg><use href="#i-cal"/></svg></span>Ajanda</button>
+ <button class="act" data-v="konum" onclick="go('konum')"><span class="ring"><svg><use href="#i-pin"/></svg></span>Konum</button>
+ <button class="act" data-v="kayit" onclick="go('kayit')"><span class="ring"><svg><use href="#i-rec"/></svg></span>Kayıt</button>
+ <button class="act" onclick="closeApp()"><span class="ring warm"><svg><use href="#i-x"/></svg></span>Kapat</button>
+</nav>
+
+<script>
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v===null||v===undefined?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function go(v){
+ document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));
+ document.querySelectorAll('.dock .act[data-v]').forEach(e=>e.classList.toggle('on',e.dataset.v===v));
+ $('v-'+v).parentElement.scrollTop=0;
+}
+
+/* Tam ekran: ilk dokunuşta adres çubuğunu gizler */
+document.addEventListener('click',()=>{const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen({navigationUI:'hide'}).catch(()=>{})},{once:true});
+function closeApp(){
+ stopRing();if(mr)stopRec();
+ if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+ try{window.close()}catch(e){}
+ setTimeout(()=>{$('bye').style.display='block'},350);
+}
+
+/* Saat */
+function tick(){
+ const n=new Date();
+ $('clock').textContent=n.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+ $('sec').textContent=String(n.getSeconds()).padStart(2,'0');
+ $('date').textContent=n.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ checkAlarms(n);
+}
+setInterval(tick,1000);tick();
+
+/* Hava: AccuWeather API (anahtar varsa) veya Open-Meteo */
+const WD=c=>c===0?'Açık':c===1?'Çoğunlukla açık':c===2?'Parçalı bulutlu':c===3?'Kapalı':c<=48?'Sisli':c<=57?'Çise':c<=67?'Yağmurlu':c<=77?'Karlı':c<=82?'Sağanak':'Fırtına';
+const WI=(c,day)=>c<=2?(day?(c===0?'☀️':'🌤️'):'🌙'):c===3?'☁️':c<=48?'🌫️':c<=67?'🌧️':c<=77?'❄️':c<=82?'🌦️':'⛈️';
+const AI=n=>n<=2?'☀️':n<=5?'🌤️':n<=8?'☁️':n===11?'🌫️':n<=14?'🌦️':n<=17?'⛈️':n===18?'🌧️':n<=29?'❄️':n===30?'🌡️':n===31?'🥶':n===32?'💨':n<=34?'🌙':n<=38?'☁️':n<=40?'🌧️':n<=42?'⛈️':'❄️';
+const dayLbl=(t,i)=>i===0?'Bugün':new Date(t).toLocaleDateString('tr-TR',{weekday:'short'});
+function getPos(){return new Promise((res,rej)=>{
+ if(!navigator.geolocation)return rej(new Error('Konum desteği yok'));
+ navigator.geolocation.getCurrentPosition(res,e=>rej(new Error('Konum alınamadı: '+e.message)),{enableHighAccuracy:true,timeout:20000,maximumAge:60000});
+});}
+async function omWx(lat,lon){
+ const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3');
+ if(!r.ok)throw new Error('Open-Meteo HTTP '+r.status);
+ const j=await r.json(),c=j.current,d=j.daily;
+ let name='';try{const g=await (await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=tr')).json();name=[g.locality||g.city,g.countryCode].filter(Boolean).join(', ')}catch(e){}
+ return {src:'Open-Meteo',name,ico:WI(c.weather_code,c.is_day),t:Math.round(c.temperature_2m),desc:WD(c.weather_code),feel:Math.round(c.apparent_temperature),h:c.relative_humidity_2m,p:c.precipitation,b:Math.round(c.surface_pressure),w:Math.round(c.wind_speed_10m),
+  days:d.time.map((t,i)=>({l:dayLbl(t,i),ico:WI(d.weather_code[i],1),max:Math.round(d.temperature_2m_max[i]),min:Math.round(d.temperature_2m_min[i])}))};
+}
+async function acWx(lat,lon,key){
+ const B='https://dataservice.accuweather.com',L='&language=tr-tr';
+ let loc=store.get('acLoc',null);
+ if(!loc||Math.abs(loc.lat-lat)>0.05||Math.abs(loc.lon-lon)>0.05){
+  const r=await fetch(B+'/locations/v1/cities/geoposition/search?apikey='+encodeURIComponent(key)+'&q='+lat+','+lon+L);
+  if(!r.ok)throw new Error('AccuWeather konum HTTP '+r.status);
+  const j=await r.json();loc={lat,lon,key:j.Key,name:j.LocalizedName+', '+(j.Country&&j.Country.ID||'')};store.set('acLoc',loc);
+ }
+ const [rc,rd]=await Promise.all([
+  fetch(B+'/currentconditions/v1/'+loc.key+'?apikey='+encodeURIComponent(key)+'&details=true'+L),
+  fetch(B+'/forecasts/v1/daily/5day/'+loc.key+'?apikey='+encodeURIComponent(key)+'&metric=true'+L)]);
+ if(!rc.ok)throw new Error('AccuWeather HTTP '+rc.status);
+ const c=(await rc.json())[0];let days=[];
+ try{if(rd.ok)days=(await rd.json()).DailyForecasts.slice(0,3).map((x,i)=>({l:dayLbl(x.Date,i),ico:AI(x.Day.Icon),max:Math.round(x.Temperature.Maximum.Value),min:Math.round(x.Temperature.Minimum.Value)}))}catch(e){}
+ const m=o=>o&&o.Metric?o.Metric.Value:0;
+ return {src:'AccuWeather',name:loc.name,ico:AI(c.WeatherIcon),t:Math.round(m(c.Temperature)),desc:c.WeatherText,feel:Math.round(m(c.RealFeelTemperature)),h:c.RelativeHumidity,p:m(c.Precip1hr),b:Math.round(m(c.Pressure)),w:Math.round(m(c.Wind&&c.Wind.Speed)),days};
+}
+async function loadWx(lat,lon){return omWx(lat,lon)}
+async function geoCity(q){
+ const j=await (await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=1&language=tr')).json();
+ if(!j.results)throw new Error('Yer bulunamadı: '+q);
+ const x=j.results[0];return {lat:x.latitude,lon:x.longitude,name:x.name};
+}
+async function ipCoords(){
+ const j=await (await fetch('https://ipwho.is/')).json();
+ if(!j.success)throw new Error('IP konumu alınamadı');
+ return {lat:j.latitude,lon:j.longitude,approx:true};
+}
+async function pickLoc(){
+ try{const p=await getPos();return {lat:p.coords.latitude,lon:p.coords.longitude}}catch(e){}
+ const c=store.get('city',null);if(c)return c;
+ try{return await ipCoords()}catch(e){}
+ throw new Error('Konum bulunamadı. Aşağıya ilçe/şehir yazın.');
+}
+function togCity(){const b=$('cityBox');b.style.display=b.style.display==='none'?'block':'none'}
+async function setCity(){
+ const q=$('cityIn').value.trim();if(!q)return;
+ try{store.set('city',await geoCity(q));$('cityBox').style.display='none';getWeather()}
+ catch(e){$('wInfo').className='err';$('wInfo').textContent=e.message;$('cityBox').style.display='block'}
+}
+async function getWeather(){
+ try{
+  const L=await pickLoc();const lat=L.lat,lon=L.lon;
+  const w=await loadWx(lat,lon);
+  $('wLoc').textContent=w.name||(lat.toFixed(3)+', '+lon.toFixed(3));
+  $('wIco').textContent=w.ico;$('wT').textContent=w.t+'°';$('wDesc').textContent=w.desc;$('wFeel').textContent='Hissedilen '+w.feel+'°';
+  $('wH').textContent='%'+w.h;$('wP').textContent=w.p+' mm';$('wB').textContent=w.b+' hPa';$('wW').textContent=w.w+' km/s';
+  $('days').innerHTML=w.days.map(d=>'<div class="day">'+d.l+'<b>'+d.ico+' '+d.max+'°/'+d.min+'°</b></div>').join('');
+  $('wInfo').className=w.note?'err':'';$('wInfo').textContent=w.note||(w.src+(L.approx?' · yaklaşık konum':'')+' · '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
+ }catch(e){$('wInfo').className='err';$('wInfo').textContent=e.message}
+}
+
+/* Haber */
+async function getNews(){
+ const ul=$('news');
+ try{
+  const feed=encodeURIComponent('https://news.google.com/rss?hl=tr&gl=TR&ceid=TR:tr');
+  const j=await (await fetch('https://api.rss2json.com/v1/api.json?rss_url='+feed)).json();
+  if(j.status!=='ok')throw new Error('Haber servisi yanıt vermedi');
+  ul.innerHTML=j.items.slice(0,10).map(i=>'<li><a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a></li>').join('');
+ }catch(e){ul.innerHTML='<li class="err">Haberler alınamadı: '+esc(e.message)+'</li>'}
+}
+
+/* Konum kaydı */
+function renderLocs(){
+ const a=store.get('locs',[]);
+ $('locs').innerHTML=a.slice().reverse().slice(0,15).map(l=>'<li><b>'+esc(l.place||l.time)+'</b><div class="mut" style="font-size:13px">'+esc(l.time)+'</div><a target="_blank" rel="noopener" href="https://www.google.com/maps?q='+l.lat+','+l.lon+'">'+l.lat.toFixed(5)+', '+l.lon.toFixed(5)+'</a> <span class="mut">±'+Math.round(l.acc)+' m</span><div class="mut" style="font-size:13px">'+(l.wx?l.wx.t+'° · nem %'+l.wx.h+' · '+l.wx.b+' hPa · yağış '+l.wx.p+' mm':'hava verisi alınamadı')+'</div></li>').join('')||'<li class="mut">Kayıt yok</li>';
+}
+async function saveLoc(btn){
+ const old=btn.innerHTML;btn.disabled=true;if(btn.classList.contains('btn'))btn.textContent='Kaydediliyor…';
+ try{
+  const p=await getPos();let w=null;
+  try{w=await loadWx(p.coords.latitude,p.coords.longitude)}catch(e){}
+  const a=store.get('locs',[]);
+  a.push({time:new Date().toLocaleString('tr-TR'),place:w?w.name:'',lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,alt:p.coords.altitude,wx:w?{t:w.t,h:w.h,b:w.b,p:w.p,src:w.src}:null});
+  store.set('locs',a);renderLocs();go('konum');
+ }catch(e){alert(e.message)}
+ btn.disabled=false;btn.innerHTML=old;
+}
+function exportLocs(){dl(URL.createObjectURL(new Blob([JSON.stringify(store.get('locs',[]),null,2)],{type:'application/json'})),'konum-kayitlari.json')}
+function dl(url,name){const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+
+/* Randevu */
+function renderAppts(){
+ const a=store.get('appts',[]).sort((x,y)=>x.d.localeCompare(y.d));
+ $('appts').innerHTML=a.map((x,i)=>'<li><b>'+esc(x.t)+'</b><div class="mut" style="font-size:13px">'+esc(new Date(x.d).toLocaleString('tr-TR',{dateStyle:'medium',timeStyle:'short'}))+'</div><button class="btn g" onclick="delAppt('+i+')">Sil</button></li>').join('')||'<li class="mut">Randevu yok</li>';
+}
+function addAppt(){
+ const t=$('aT').value.trim(),d=$('aD').value;if(!t||!d)return alert('Randevu adı ve zamanı girin');
+ const a=store.get('appts',[]);a.push({t,d});store.set('appts',a);$('aT').value='';renderAppts();
+}
+function delAppt(i){const a=store.get('appts',[]).sort((x,y)=>x.d.localeCompare(y.d));a.splice(i,1);store.set('appts',a);renderAppts()}
+
+/* Alarm */
+let actx=null,ringTimer=null,lastFired='';
+function renderAlarms(){
+ const a=store.get('alarms',[]);
+ $('alarms').innerHTML=a.map((x,i)=>'<li><b>'+esc(x.t)+'</b> <span class="mut">'+esc(x.l||'Alarm')+'</span> <button class="btn g" onclick="delAlarm('+i+')">Sil</button></li>').join('')||'<li class="mut">Alarm yok</li>';
+}
+function addAlarm(){
+ const t=$('alT').value;if(!t)return alert('Saat seçin');
+ try{actx=actx||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
+ const a=store.get('alarms',[]);a.push({t,l:$('alL').value.trim()});store.set('alarms',a);renderAlarms();
+}
+function delAlarm(i){const a=store.get('alarms',[]);a.splice(i,1);store.set('alarms',a);renderAlarms()}
+function checkAlarms(n){
+ const hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+ if(n.getSeconds()!==0||lastFired===hm+n.getDate())return;
+ const hit=store.get('alarms',[]).find(x=>x.t===hm);
+ if(hit){lastFired=hm+n.getDate();ring(hit.l||'Alarm')}
+}
+function ring(txt){
+ $('ring').style.display='block';$('ringTxt').textContent=txt;
+ const beep=()=>{try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator();o.frequency.value=880;o.connect(actx.destination);o.start();o.stop(actx.currentTime+0.4)}catch(e){}if(navigator.vibrate)navigator.vibrate(400)};
+ beep();ringTimer=setInterval(beep,900);
+}
+function stopRing(){clearInterval(ringTimer);$('ring').style.display='none'}
+
+/* Kayıt */
+let mr=null,stream=null,chunks=[];
+async function rec(kind){
+ if(mr)return;
+ try{stream=await navigator.mediaDevices.getUserMedia(kind==='video'?{audio:true,video:{facingMode:'environment'}}:{audio:true})}
+ catch(e){return alert('Mikrofon/kamera izni alınamadı: '+e.message)}
+ chunks=[];mr=new MediaRecorder(stream);
+ mr.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ mr.onstop=()=>{
+  const type=mr.mimeType||(kind==='video'?'video/webm':'audio/webm');
+  const url=URL.createObjectURL(new Blob(chunks,{type}));
+  const name=(kind==='video'?'goruntu-':'ses-')+Date.now()+'.'+(type.includes('mp4')?'mp4':'webm');
+  const li=document.createElement('li');
+  li.innerHTML=(kind==='video'?'<video controls playsinline src="'+url+'"></video>':'<audio controls src="'+url+'"></audio>')+'<button class="btn" onclick="dl(\''+url+'\',\''+name+'\')">İndir</button>';
+  $('recEmpty').style.display='none';$('recs').prepend(li);
+  stream.getTracks().forEach(t=>t.stop());$('prev').style.display='none';$('prev').srcObject=null;
+  mr=null;$('stopBtn').disabled=true;$('recSt').textContent='Kayıt bitti. Kaybolmaması için İndir’e basın.';
+ };
+ if(kind==='video'){$('prev').srcObject=stream;$('prev').style.display='block';$('prev').play()}
+ mr.start();$('stopBtn').disabled=false;$('recSt').textContent='Kayıt sürüyor…';
+}
+function stopRec(){if(mr&&mr.state!=='inactive')mr.stop()}
+
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderLocs();renderAppts();renderAlarms();getWeather();getNews();
+setInterval(getWeather,600000);setInterval(getNews,300000);
+</script>
+</body>
+</html>
